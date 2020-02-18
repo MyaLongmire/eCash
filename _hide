@@ -266,6 +266,7 @@ def c_show(x):
 
 #hide msg
 def hide(message, public_key):
+    print(public_key)
     factor = f_hide(public_key[1])
     msg = int(message)
     hide_msg = (pow(factor, *public_key)*msg) % public_key[1]
@@ -286,9 +287,6 @@ def m_id(id_f, quantity, n):
 def main():
     print("welcome to ecash\n")
 
-    print(public_key)
-    global n
-    global n
     global n
     global r
     global public_key
