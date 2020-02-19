@@ -1,5 +1,7 @@
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-import cPickle
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
+
+import pickle
 import random
 import hashlib
 import fractions
@@ -7,7 +9,11 @@ import fractions
 n = 10
 r = random.sample(range(0,10),9)
 
-private_key = Ed25519PrivateKey.generate()
+private_key = rsa.generate_private_key(
+    public_exponent=65537,
+    key_size=2048,
+    backend=default_backend(),
+)
 public_key = private_key.public_key()
 
 
@@ -16,29 +22,29 @@ def dupchck(data):
     status = 'verfied'
 
     for i in r:
-	if i + 1 in r:
+        if i + 1 in r:
             y = str(data[i + 1])
-	    x = str(data[i])
+            x = str(data[i])
 
-	    if x[-13:-11] == y[-13:-11]:
-		status = 'rej'
-	    	break
+            if x[-13:-11] == y[-13:-11]:
+                status = 'rej'
+                break
 
-	elif i - 1 in r:
+        elif i - 1 in r:
             y = str(data[i - 1])
-	    x = str(data[i])
+            x = str(data[i])
 
-	    if x[-13:-11] == y[-13:-11]:
-		status = 'rej'
-		break
+            if x[-13:-11] == y[-13:-11]:
+                status = 'rej'
+                break
 
         elif x + 2 in r:
             y = str(data[i + 2])
-	    x = str(data[i])
+            x = str(data[i])
 
-	    if x[-13:-11] == y[-13:-11]:
-		status = 'rej'
-		break
+            if x[-13:-11] == y[-13:-11]:
+                status = 'rej'
+                break
 
 
     return status
@@ -48,10 +54,10 @@ def a_verify(data, quantity):
     status = 'verfied'
 
     for i in r:
-	j = str(data[i])
+        j = str(data[i])
 
-	if j[-10:] != quantity:
-	    status = 'rej'
+        if j[-10:] != quantity:
+            status = 'rej'
 
     return status
 
@@ -63,9 +69,9 @@ def h_id(ssn_l, ssn_r):
     id_l = {}
 
     for i in range (0,4):
-	id_r[i] = int(hashlib.sha1(str(ssn_r[i])).hexdigest(), 16) % (10 ** 8)
-	id_l[i] = int(hashlib.sha1(str(ssn_l[i])).hexdigest(), 16) % (10 ** 8)
-	id_f = str(id_f) + str(id_l[i]) + str(id_r[i])
+        id_r[i] = int(hashlib.sha1(str(ssn_r[i])).hexdigest(), 16) % (10 ** 8)
+        id_l[i] = int(hashlib.sha1(str(ssn_l[i])).hexdigest(), 16) % (10 ** 8)
+        id_f = str(id_f) + str(id_l[i]) + str(id_r[i])
 
     return id_f
 
@@ -124,10 +130,10 @@ def c_order():
         b_order[i], factor[i] = hide(order[i], public_key)
 
     with open('f_hide', 'wb') as f:
-        cPickle.dump(factor, f)
+        pickle.dump(factor, f)
 
     with open('m_ids', 'wb') as f:
-        cPickle.dump(b_order, f)
+        pickle.dump(b_order, f)
 
     print("orders saved and generated, waiting on bank\n")
 
@@ -136,7 +142,7 @@ def m_verify():
     status = 'verfied'
 
     with open('shown and signed orders', 'rb') as f:
-        o_recieved = cPickle.load(f)
+        o_recieved = pickle.load(f)
 
     o_verify = verify(o_recieved, public_key)
 
@@ -147,10 +153,10 @@ def m_verify():
         print("verified by merchant - depositing to bank\n")
 
         with open('received', 'wb') as f:
-            cPickle.dump(o_verify, f)
+            pickle.dump(o_verify, f)
 
         with open('verified', 'rb') as f:
-            data_b = cPickle.load(f)
+            data_b = pickle.load(f)
 
         for i in r:
             x = str(data_b[i])
@@ -174,10 +180,10 @@ def split_ssn(user_ssn):
         ssn_r[i] = ssn_l[i] ^ user_ssn
 
     with open('val_r', 'wb') as f:
-        cPickle.dump(ssn_r, f)
+        pickle.dump(ssn_r, f)
 
     with open('val_l', 'wb') as f:
-        cPickle.dump(ssn_l, f)
+        pickle.dump(ssn_l, f)
 
     return ssn_l, ssn_r
 
@@ -197,10 +203,10 @@ def b_verify():
     q = str(quantity).rjust(10, '0')
 
     with open('m_ids', 'rb') as f:
-        b_order = cPickle.load(f)
+        b_order = pickle.load(f)
 
     with open('f_hide', 'rb') as f:
-        factor = cPickle.load(f)
+        factor = pickle.load(f)
 
     for i in r:
         m_signed[i] = b_sig(b_order[i], private_key)
@@ -216,14 +222,14 @@ def b_verify():
 
         if status == 'verfied':
             with open('verified', 'wb') as f:
-                cPickle.dump(o_verified, f)
+                pickle.dump(o_verified, f)
 
     for j in range(0,10):
         if j not in r:
             m_signed = b_sig(b_order[j], private_key)
 
             with open('signed blinded order', 'wb') as f:
-                cPickle.dump(m_signed, f)
+                pickle.dump(m_signed, f)
 
             print("done dublicating\n")
 
@@ -254,15 +260,15 @@ def calc_inv(m, val):
 #show customer
 def c_show(x):
     with open('signed blinded order', 'rb') as f:
-        sb_order = cPickle.load(f)
+        sb_order = pickle.load(f)
 
     with open('f_hide', 'rb') as f:
-        factor = cPickle.load(f)
+        factor = pickle.load(f)
 
     show_order = show(sb_order, factor[x], public_key)
 
     with open('shown and signed orders', 'wb') as f:
-        cPickle.dump(show_order, f)
+        pickle.dump(show_order, f)
 
 #hide msg
 def hide(message, public_key):
@@ -291,14 +297,14 @@ def main():
     global n
     global n
     global r
-    global public_key
-    global private_key
 
     c_order()
     v = b_verify()
 
     if v != 'rej':
-        print("The bank signed and verified the money order " + str(v) + "\n sending to merchant\n")
+        print("The bank signed and verified the money order " +
+              str(v) +
+              "\n sending to merchant\n")
         c_show(v)
         m = m_verify()
 
