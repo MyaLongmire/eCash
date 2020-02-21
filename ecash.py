@@ -1,5 +1,9 @@
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.hazmat.primitives.serialization import PublicFormat
+from cryptography.hazmat.primitives.serialization import PrivateFormat
+from cryptography.hazmat.primitives.serialization import KeySerializationEncryption
 
 import pickle
 import random
@@ -14,7 +18,13 @@ private_key = rsa.generate_private_key(
     key_size=2048,
     backend=default_backend(),
 )
-public_key = private_key.public_key()
+public_key = _private_key.public_key()
+
+# private_key = _private_key.private_bytes(Encoding.DER, PrivateFormat.PKCS8, KeySerializationEncryption())
+# private_key = long(private_key.encode('hex'), 16)
+# 
+# public_key = _public_key.public_bytes(Encoding.DER, PublicFormat.PKCS1)
+# public_key = long(public_key.encode('hex'), 16)
 
 
 #check for duplication
@@ -87,6 +97,7 @@ def f_hide(i):
 #show signed message
 def show(message, status, public_key):
     hidden_msg = int(message)
+    #final = (hidden_msg * calc_inv(public_key[1], status)) % public_key[1]
     final = (hidden_msg * calc_inv(public_key[1], status)) % public_key[1]
     return str(final)
 
